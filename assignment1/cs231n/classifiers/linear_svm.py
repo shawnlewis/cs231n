@@ -75,11 +75,12 @@ def svm_loss_vectorized(W, X, y, reg):
   N = X.shape[0]
   scores = X.dot(W) # (N, C)
   correct_scores = scores[np.arange(N), y]
-  inner = (scores.T - correct_scores + 1).T
+  inner = (scores.T - correct_scores + 1).T # (N, C)
   inner[inner < 0] = 0
   loss = np.sum(inner, axis=1) - 1 # handle j=yi
   loss = np.sum(loss) / N
-  #TODO: handle regularization
+
+  loss += 0.5 * reg * np.sum(W * W)
 
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -95,7 +96,15 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  mult = inner  # (N, C)
+  mult[mult > 0] = 1
+  too_close = np.sum(mult, axis=1) - 1
+  mult[np.arange(N), y] = -too_close[np.arange(N)] # handle j=yi
+  dW = X.T.dot(mult)  # X: (N, D) dW: (D, C)
+
+  dW /= N
+
+  dW += reg*W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
