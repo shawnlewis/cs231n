@@ -98,14 +98,14 @@ class KNearestNeighbor(object):
     XX = np.square(X).sum(axis=1)
     TT = np.square(self.X_train).sum(axis=1)
 
-    print 'X', X.shape
-    print 'T', self.X_train.shape
-    print 'XT', XT.shape
-    print 'XX', XX.shape
-    print 'TT', TT.shape
+    #print 'X', X.shape
+    #print 'T', self.X_train.shape
+    #print 'XT', XT.shape
+    #print 'XX', XX.shape
+    #print 'TT', TT.shape
 
     dists = -2 * XT + TT
-    print 'dists1', dists.shape
+    #print 'dists1', dists.shape
     dists = dists + XX[np.newaxis, :].T
     #########################################################################
     # TODO:                                                                 #
