@@ -24,12 +24,25 @@ def softmax_loss_naive(W, X, y, reg):
   dW = np.zeros_like(W)
 
   #############################################################################
-  # TODO: Compute the softmax loss and its gradient using explicit loops.     #
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
+  for i in xrange(num_train):
+    scores = X[i].dot(W)
+    scores = np.exp(scores)
+    denom = np.sum(scores)
+    loss += -np.log(scores[y[i]] / denom)
+    for j in xrange(num_classes):
+      prob = scores[j] / denom
+      dW[:, j] += (prob - (j == y[i])) * X[i]
+  loss /= num_train
+  loss += 0.5 * reg * np.sum(W * W)
+
+  dW /= num_train
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -45,15 +58,27 @@ def softmax_loss_vectorized(W, X, y, reg):
   """
   # Initialize the loss and gradient to zero.
   loss = 0.0
-  dW = np.zeros_like(W)
+  dW = np.zeros_like(W) # (D, C)
+  N = X.shape[0]
 
   #############################################################################
-  # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W) # (N, C)
+  exp = np.exp(scores)
+  denom = exp.sum(axis=1)
+  probs = exp[np.arange(N), y] / denom
+  loss = np.sum(-np.log(probs)) / N
+  loss += 0.5 * reg * np.sum(W * W)  # reg
+
+  # gradient
+  class_probs = (exp.T / denom).T
+  class_probs[np.arange(N), y] -= 1
+  dW = X.T.dot(class_probs)
+  dW /= N
+  dW += reg*W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
