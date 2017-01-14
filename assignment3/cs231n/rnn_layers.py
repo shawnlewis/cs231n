@@ -139,11 +139,24 @@ def rnn_backward(dh, cache):
   # sequence of data. You should use the rnn_step_backward function that you   #
   # defined above.                                                             #
   ##############################################################################
+  x, prev_h, Wx, Wh, inner = cache[0]
+
+  N, D = x.shape
   N, T, H = dh.shape
-  db = np.empty(H)
+
+  dx = np.zeros((N, T, D))
+  dh0 = np.zeros_like(prev_h)
+  dWx = np.zeros_like(Wx)
+  dWh = np.zeros_like(Wh)
+  db = np.zeros(H)
+
   for t, cachet in reversed(zip(xrange(0, T), cache)):
-    dnext_h = dh[:, t, :]
-    dx, dh0, dWx, dWh, dbt = rnn_step_backward(dnext_h, cachet)
+    dnext_h = dh[:, t, :] + dh0
+    dxt, dh0, dWxt, dWht, dbt = rnn_step_backward(dnext_h, cachet)
+
+    dx[:, t, :] = dxt
+    dWx += dWxt
+    dWh += dWht
     db += dbt
 
   ##############################################################################
@@ -173,11 +186,18 @@ def word_embedding_forward(x, W):
   #                                                                            #
   # HINT: This should be very simple.                                          #
   ##############################################################################
-  pass
+  N, T = x.shape
+  V, D = W.shape
+  out = np.zeros((N, T, D))
+
+  for n in xrange(N):
+    for t in xrange(T):
+      out[n, t] = W[x[n, t]]
+
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
-  return out, cache
+  return out, (x, W)
 
 
 def word_embedding_backward(dout, cache):
@@ -201,7 +221,17 @@ def word_embedding_backward(dout, cache):
   #                                                                            #
   # HINT: Look up the function np.add.at                                       #
   ##############################################################################
-  pass
+  x, W = cache
+  N, T = x.shape
+  V, D = W.shape
+
+  dW = np.zeros_like(W)
+  for n in xrange(N):
+    for t in xrange(T):
+      word_idx = x[n, t]
+      word = dout[n, t]
+      dW[word_idx] += word
+
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################

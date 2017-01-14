@@ -135,7 +135,35 @@ class CaptioningRNN(object):
     # defined above to store loss and gradients; grads[k] should give the      #
     # gradients for self.params[k].                                            #
     ############################################################################
-    pass
+    # 1. hidden state from image features
+    h0, affine_cache = affine_forward(features, W_proj, b_proj)
+
+    # 2. word embedding
+    x, word_embed_cache = word_embedding_forward(captions_in, W_embed)
+
+    # 3. rnn
+    h, rnn_cache = rnn_forward(x, h0, Wx, Wh, b)
+
+    # 4. temporal affine
+    scores, temporal_affine_cache = temporal_affine_forward(h, W_vocab, b_vocab)
+
+    # 5. loss
+    loss, dout = temporal_softmax_loss(scores, captions_out, mask)
+
+    ### backward
+    # 4.
+    dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(
+        dout, temporal_affine_cache)
+
+    # 3.
+    dx, dh, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dx, rnn_cache)
+
+    # 2.
+    grads['W_embed'] = word_embedding_backward(dx, word_embed_cache)
+
+    # 1.
+    _, grads['W_proj'], grads['b_proj'] = affine_backward(dh, affine_cache)
+
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -197,7 +225,17 @@ class CaptioningRNN(object):
     # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
     # a loop.                                                                 #
     ###########################################################################
-    pass
+    next_h, _ = affine_forward(features, W_proj, b_proj)
+    word = self._start
+    words = np.repeat(word, features.shape[0])
+    for i in xrange(max_length):
+      embed, _ = word_embedding_forward(words[:, np.newaxis], W_embed)
+      x = embed[:, 0, :]
+      next_h, _ = rnn_step_forward(x, next_h, Wx, Wh, b)
+      scores, _ = affine_forward(next_h, W_vocab, b_vocab)
+      words = np.argmax(scores, axis=1)
+      captions[:, i] = words
+    
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
